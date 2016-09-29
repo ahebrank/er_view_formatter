@@ -1,0 +1,5 @@
+name: Entity reference view formatter
+type: module
+description: Execute and render a referenced view.
+core: 8.x
+package: Fields

@@ -1,0 +1,5 @@
+{
+   "name": "ahebrank/er_view_formatter",
+   "type": "drupal-module",
+   "description": "Renderer for entity-referenced Views"
+}
