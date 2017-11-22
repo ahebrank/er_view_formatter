@@ -1,3 +1,6 @@
+DEPRECATED! You should probably use https://www.drupal.org/project/viewreference 
+unless you really want to just format an existing entity reference field.
+
 INTRODUCTION
 ------------
 
