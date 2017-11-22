@@ -4,7 +4,7 @@ namespace Drupal\er_view_formatter\Plugin\Field\FieldFormatter;
 use Drupal\Core\Field\FieldDefinitionInterface;
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\Plugin\Field\FieldFormatter\EntityReferenceFormatterBase;
-use Drupal\views\Entity\View;
+use Drupal\views\Views;
 
 /**
  * Plugin implementation of the Entity Reference View Formatter.
@@ -25,31 +25,42 @@ class EntityReferenceViewFormatter extends EntityReferenceFormatterBase {
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $elements = array();
 
-    foreach ($this->getEntitiesToView($items, $langcode) as $delta => $entity) {
-      if ($entity instanceof View) {
-        // Use the first embed display if available.
-        if ($entity->getDisplay('embed_1')) {
-          $display_id = 'embed_1';
-        }
-        // Otherwise, use first block display if available.
-        elseif ($entity->getDisplay('block_1')) {
-          $display_id = 'block_1';
-        }
-        // Last resort: use default display.
-        else {
-          $display_id = 'default';
-        }
-        $executable = $entity->getExecutable();
-        $executable->setDisplay($display_id);
+    foreach ($items as $delta => $item) {
+      $view_name = $item->getValue()['target_id'];
+      $view = Views::getView($view_name);
 
-        $elements[$delta] = [
-          '#type' => 'container',
-          'view' => $executable->render(),
-        ];
+      // make sure it's a View
+      if (!$view instanceof \Drupal\views\ViewExecutable) {
+        continue;
       }
+
+      $storage = $view->storage;
+
+      // Use the first embed display if available.
+      if ($storage->getDisplay('embed_1')) {
+        $display_id = 'embed_1';
+      }
+      // Otherwise, use first block display if available.
+      elseif ($storage->getDisplay('block_1')) {
+        $display_id = 'block_1';
+      }
+      // Last resort: use default display.
       else {
-        $elements[$delta] = array('#markup' => t('This is not a view'));
+        $display_id = 'default';
       }
+      
+      $view->setDisplay($display_id);
+
+      // check access
+      if (!$view->access($display_id)) {
+        continue;
+      }
+
+      $view->build($display_id);
+      $view->preExecute();
+      $view->execute($display_id);
+
+      $elements[$delta] = $view->buildRenderable($display_id);
     }
 
     return $elements;
